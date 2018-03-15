@@ -2,6 +2,7 @@ extern crate image;
 
 use std::fs::File;
 use std::rc::Rc;
+use std::collections::HashMap;
 use image::ImageDecoder;
 
 #[derive(Clone, Copy, Debug)]
@@ -23,9 +24,7 @@ fn main() {
     let (width, height) = decoder.dimensions().unwrap();
     let frames = decoder.into_frames().unwrap().next().unwrap();
     let buf = frames.into_buffer();
-    let mut nodes: Vec<Rc<Node>> = Vec::new();
-    let mut start = None;
-    let mut end = None;
+    let mut nodes: HashMap<(u32, u32), NodeType> = HashMap::new();
     for (x, y, pixel) in buf.enumerate_pixels() {
         if pixel.data[0] == 255 {
             if x > 0 && x < width - 1 && y > 0 && y < height - 1 {
@@ -51,36 +50,18 @@ fn main() {
                     n += 1;
                 }
                 if n > 2 || !((north && south) || (east && west)) {
-                    nodes.push(Rc::new(Node {
-                        pos: (x, y),
-                        node_type: if n == 2 { NodeType::Joint } else { NodeType::Corner },
-                        siblings: Vec::new(),
-                    }));
+                    nodes.insert((x, y), if n == 2 { NodeType::Joint } else { NodeType::Corner });
                 }
             } else {
                 if y == 0 {
-                    let node = Rc::new(Node {
-                        pos: (x, y),
-                        node_type: NodeType::Start,
-                        siblings: Vec::new(),
-                    });
-                    nodes.push(Rc::clone(&node));
-                    start = Some(node);
+                    nodes.insert((x, y), NodeType::Start);
                 } else if y == height-1 {
-                    let node = Rc::new(Node {
-                        pos: (x, y),
-                        node_type: NodeType::End,
-                        siblings: Vec::new(),
-                    });
-                    nodes.push(Rc::clone(&node));
-                    end = Some(node);
+                    nodes.insert((x, y), NodeType::End);
                 }
             }
         }
     }
     let nodes = nodes;
-    let start = start.unwrap();
-    let end = end.unwrap();
 
-    nodes.iter().inspect(|x| println!("{:?} - {:?}", x.pos, x.node_type)).collect::<Vec<_>>();
+    nodes.iter().inspect(|&(pos, node_type)| println!("{:?} - {:?}", pos, node_type)).collect::<Vec<_>>();
 }
