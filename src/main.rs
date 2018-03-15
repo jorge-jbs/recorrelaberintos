@@ -20,6 +20,11 @@ struct Node {
 }
 
 fn main() {
+    let nodes = read_nodes();
+    nodes.iter().inspect(|&(pos, node_type)| println!("{:?} - {:?}", pos, node_type)).collect::<Vec<_>>();
+}
+
+fn read_nodes() -> HashMap<(u32, u32), NodeType> {
     let mut decoder = image::bmp::BMPDecoder::new(File::open("laberinto-1.bmp").unwrap());
     let (width, height) = decoder.dimensions().unwrap();
     let frames = decoder.into_frames().unwrap().next().unwrap();
@@ -61,7 +66,5 @@ fn main() {
             }
         }
     }
-    let nodes = nodes;
-
-    nodes.iter().inspect(|&(pos, node_type)| println!("{:?} - {:?}", pos, node_type)).collect::<Vec<_>>();
+    nodes
 }
