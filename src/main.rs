@@ -1,18 +1,8 @@
 extern crate image;
 
 use std::fs::File;
-use std::rc::Rc;
 use std::collections::HashSet;
-use std::collections::HashMap;
 use image::ImageDecoder;
-
-#[derive(Clone, Copy, Debug)]
-enum NodeType {
-    Start,  // node with one sibling at the top of the image
-    End,  // node with one sibling at the bottom of the image
-    Joint,  // node with two siblings
-    Corner,  // node with more than two siblings
-}
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 struct Pos {
@@ -86,76 +76,46 @@ struct Graph {
 }
 
 fn main() {
-    let nodes = read_nodes();
-    //nodes.iter().inspect(|&&(pos, t)| println!("{:?} - {:?}", pos, t)).collect::<Vec<_>>();
-    //println!("");
-    let graph = generate_graph(nodes);
-    graph.edges.iter().inspect(|&&Edge(a, b)| println!("{:?} <-> {:?}", a, b)).collect::<Vec<_>>();
+    let graph = read_graph();
+    for &Edge(a, b) in &graph.edges {
+        println!("{:?} <-> {:?}", a, b);
+    }
     println!("{}", graph.edges.contains(&((8, 3), (8, 2)).into()));
 }
 
-fn read_nodes() -> Vec<(Pos, NodeType)> {
+fn read_graph() -> Graph {
     let mut decoder = image::bmp::BMPDecoder::new(File::open("laberinto-1.bmp").unwrap());
     let (width, height) = decoder.dimensions().unwrap();
     let frames = decoder.into_frames().unwrap().next().unwrap();
     let buf = frames.into_buffer();
-    let mut nodes: Vec<(Pos, NodeType)> = Vec::new();
+    let mut start = None;
+    let mut end = None;
+    let mut edges: HashSet<Edge> = HashSet::new();
     for (x, y, pixel) in buf.enumerate_pixels() {
         if pixel.data[0] == 255 {
             if x > 0 && x < width - 1 && y > 0 && y < height - 1 {
-                let mut n = 0;
-                let mut north = false;
-                let mut south = false;
-                let mut east = false;
-                let mut west = false;
                 if buf.get_pixel(x-1, y).data[0] == 255 {
-                    west = true;
-                    n += 1;
+                    edges.insert(((x, y), (x-1, y)).into());
                 }
                 if buf.get_pixel(x+1, y).data[0] == 255 {
-                    east = true;
-                    n += 1;
+                    edges.insert(((x, y), (x+1, y)).into());
                 }
                 if buf.get_pixel(x, y-1).data[0] == 255 {
-                    north = true;
-                    n += 1;
+                    edges.insert(((x, y-1), (x, y)).into());
                 }
                 if buf.get_pixel(x, y+1).data[0] == 255 {
-                    south = true;
-                    n += 1;
+                    edges.insert(((x, y+1), (x, y)).into());
                 }
-                nodes.push(((x, y).into(), if n <= 2 { NodeType::Joint } else { NodeType::Corner }));
-            } else {
-                if y == 0 {
-                    nodes.push(((x, y).into(), NodeType::Start));
-                } else if y == height-1 {
-                    nodes.push(((x, y).into(), NodeType::End));
-                }
+            } else if y == 0 {
+                start = Some((x, y).into());
+            } else if y == height-1 {
+                end = Some((x, y).into());
             }
         }
     }
-    nodes
-}
-
-fn generate_graph(nodes: Vec<(Pos, NodeType)>) -> Graph {
-    let mut hor_edges: HashSet<Edge> = HashSet::new();
-    let mut last: Pos = nodes[0].0;
-    for &(pos, t) in nodes.iter().skip(1).rev().skip(1).rev() {
-        if last.x+1 == pos.x && last.y == pos.y {
-            hor_edges.insert((last, pos).into());
-        }
-        last = pos;
-    }
-
-    let mut ver_edges: HashSet<Edge> = HashSet::new();
-    for &(pos, t) in nodes.iter() {
-        if nodes.iter().find(|&&(suc, _)| pos.x == suc.x && pos.y+1 == suc.y).is_some() {
-            ver_edges.insert((pos, (pos.x, pos.y+1)).into());
-        }
-    }
     Graph {
-        start: nodes[0].0,
-        end: nodes.last().unwrap().0,
-        edges: hor_edges.union(&ver_edges).cloned().collect(),
+        start: start.unwrap(),
+        end: end.unwrap(),
+        edges,
     }
 }
