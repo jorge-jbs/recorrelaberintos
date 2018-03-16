@@ -13,6 +13,12 @@ enum NodeType {
     Corner,  // node with more than two siblings
 }
 
+struct Graph {
+    start: Rc<Node>,
+    end: Rc<Node>,
+    nodes: Vec<Rc<Node>>,
+}
+
 struct Node {
     pos: (u32, u32),
     node_type: NodeType,
@@ -22,6 +28,7 @@ struct Node {
 fn main() {
     let nodes = read_nodes();
     nodes.iter().inspect(|&(pos, node_type)| println!("{:?} - {:?}", pos, node_type)).collect::<Vec<_>>();
+    println!("{:?}", find_siblings((6, 1), &nodes))
 }
 
 fn read_nodes() -> HashMap<(u32, u32), NodeType> {
@@ -67,4 +74,19 @@ fn read_nodes() -> HashMap<(u32, u32), NodeType> {
         }
     }
     nodes
+}
+
+/*
+fn generate_graph() -> Graph {
+
+}
+*/
+
+fn find_siblings((x, y): (u32, u32), nodes: &HashMap<(u32, u32), NodeType>) -> Vec<((u32, u32), NodeType)> {
+    let horizontal = nodes.iter().map(|(&x, &y)| (x, y)).filter(|&(pos, node_type)| pos.1 == y && pos.0 != x);
+    let (left, right) = horizontal.partition::<Vec<_>, _>(|&(pos, _)| pos.0 < x);
+    let vertical   = nodes.iter().map(|(&x, &y)| (x, y)).filter(|&(pos, node_type)| pos.0 == x && pos.1 != y);
+    let (up, down) = vertical.partition(|&(pos, _)| pos.1 < y);
+    //left.collect::<Vec<_>>()
+    up
 }
