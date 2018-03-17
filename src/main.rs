@@ -2,6 +2,7 @@ extern crate image;
 
 use std::fs::File;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use image::ImageDecoder;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -105,5 +106,53 @@ fn read_graph() -> Graph {
         start: start.unwrap(),
         end: end.unwrap(),
         nodes,
+    }
+}
+
+fn distance(a: Pos, b: Pos) -> f32 {
+    ((a.x+b.x).pow(2) as f32 + (a.y+b.y).pow(2) as f32).sqrt()
+}
+
+#[derive(PartialEq, Clone, Debug)]
+struct Node {
+    pos: Pos,
+    distance: f32,
+    neighbours: [Option<Pos>; 4],
+    path: Vec<Pos>,
+}
+
+fn breadth_first_search(graph: Graph) -> Vec<Pos> {
+    let node = Node {
+        pos: graph.start,
+        distance: distance(graph.start, graph.end),
+        neighbours: graph.nodes[&graph.start],
+        path: Vec::new(),
+    };
+    if node.pos == graph.end { return Vec::new() }
+    let mut frontier: Vec<Node> = vec![node];
+    let mut explored: HashSet<Pos> = HashSet::new();
+    loop {
+        //println!("{:?}", frontier.iter().map(|x| x.pos).collect::<Vec<_>>());
+        if frontier.is_empty() { panic!("Fallé. ¡Imposible!") }
+        let nodo = frontier.pop().unwrap();
+        explored.insert(nodo.pos);
+        for neighbour in &nodo.neighbours {
+            if let &Some(neighbour) = neighbour {
+                let mut new_path = nodo.path.clone();
+                new_path.push(neighbour);
+                let child = Node {
+                    pos: neighbour,
+                    distance: distance(nodo.pos, neighbour),
+                    neighbours: graph.nodes[&neighbour],
+                    path: new_path,
+                };
+                if !explored.contains(&neighbour) && frontier.iter().find(|&x| x.clone() == child).is_none() {
+                    if neighbour == graph.end {
+                        return child.path
+                    }
+                    frontier.insert(0, child);
+                }
+            }
+        }
     }
 }
