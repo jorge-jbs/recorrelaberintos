@@ -37,15 +37,14 @@ struct Graph {
 
 fn main() {
     let graph = read_graph();
-    for (pos, edges) in &graph.nodes {
-        println!("{:?} -> {:?}", pos, edges);
-    }
     println!("{}", graph.nodes.len());
+    println!("");
+    println!("{:?}", breadth_first_search(graph).len());
 }
 
 fn read_graph() -> Graph {
     let (buf, width, height) = {
-        let mut decoder = image::bmp::BMPDecoder::new(File::open("laberinto-1.bmp").unwrap());
+        let mut decoder = image::png::PNGDecoder::new(File::open(format!("examples-from-computerphile/{}.png", ::std::env::args().skip(1).next().expect("Introduce the name of the maze"))).unwrap());
         let (width, height) = decoder.dimensions().unwrap();
         let frames = decoder.into_frames().unwrap().next().unwrap();
         (frames.into_buffer(), width, height)
