@@ -29,7 +29,7 @@ pub fn parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
             use std::io::Write;
             ::std::io::Stdout::flush(&mut ::std::io::stdout());
         }
-        frontier = match process_level(&graph, &explored, frontier) {
+        frontier = match process_level(&graph, &mut explored, frontier) {
             Some(new_frontier) => new_frontier,
             None => break,
         };
@@ -38,9 +38,12 @@ pub fn parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
     ConsList::new()
 }
 
-fn process_level(graph: &Graph, explored: &HashSet<Pos>, frontier: Vec<Node>) -> Option<Vec<Node>> {
+fn process_level(graph: &Graph, explored: &mut HashSet<Pos>, frontier: Vec<Node>) -> Option<Vec<Node>> {
     let (sender, receiver) = channel();
     let (sender_finished, receiver_finished) = channel();
+    for n in &frontier {
+        explored.insert(n.pos);
+    }
     frontier.into_par_iter()
         .for_each_with((sender, sender_finished), |&mut (ref sender, ref sender_finished), node| {
             //sender.send(node);
