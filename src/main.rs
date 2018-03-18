@@ -159,7 +159,16 @@ fn breadth_first_search(graph: Graph) -> ConsList<Pos> {
     loop {
         if frontier.is_empty() { panic!("Fallé. ¡Imposible!") }
         let node = frontier.pop().unwrap();
-        explored.insert(node.pos);
+        if !explored.insert(node.pos) {  // if he have already explored the node, skip it
+            /** Instead of checking duplicates in `frontier` (finding whether a node is in the
+             * frontier is expensive), we add nodes even if they are duplicated, and skip them we
+             * have already explored them.
+             *
+             * Although in practice there doesn't seem to be any duplicated nodes :/
+             */
+            println!("eh!");
+            continue
+        }
         for neighbour in &node.neighbours {
             if let &Some(neighbour) = neighbour {
                 let child = Node {
@@ -168,7 +177,7 @@ fn breadth_first_search(graph: Graph) -> ConsList<Pos> {
                     neighbours: graph.nodes[&neighbour],
                     path: node.path.append(neighbour),
                 };
-                if !explored.contains(&neighbour) && frontier.iter().find(|&x| x.clone() == child).is_none() {
+                if !explored.contains(&neighbour) {
                     if neighbour == graph.end {
                         return child.path
                     }
