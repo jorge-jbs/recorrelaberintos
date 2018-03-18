@@ -6,6 +6,8 @@ use std::fs::File;
 use std::collections::HashMap;
 use image::ImageDecoder;
 
+mod async_cons_list;
+
 mod bfs;
 use bfs::breadth_first_search;
 
