@@ -1,5 +1,6 @@
 extern crate image;
 extern crate cons_list;
+extern crate rayon;
 
 use std::fs::File;
 use std::collections::HashMap;
@@ -7,6 +8,9 @@ use image::ImageDecoder;
 
 mod bfs;
 use bfs::breadth_first_search;
+
+mod pbfs;
+use pbfs::parallel_breadth_first_search;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Pos {
@@ -39,7 +43,7 @@ fn main() {
     let graph = read_graph();
     println!("{}", graph.nodes.len());
     println!("");
-    println!("{:?}", breadth_first_search(graph).len());
+    println!("{:?}", parallel_breadth_first_search(graph).len());
 }
 
 fn read_graph() -> Graph {
