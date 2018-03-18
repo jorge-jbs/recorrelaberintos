@@ -5,3 +5,4 @@ authors = ["Jorge Blázquez Saborido <jorge.jbs@protonmail.com>"]
 
 [dependencies]
 image = "*"
+cons-list = "0.0.3"

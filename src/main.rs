@@ -1,9 +1,11 @@
 extern crate image;
+extern crate cons_list;
 
 use std::fs::File;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use cons_list::ConsList;
 use image::ImageDecoder;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
@@ -123,7 +125,7 @@ struct Node {
     pos: Pos,
     cost: f32,
     neighbours: [Option<Pos>; 4],
-    path: Vec<Pos>,
+    path: ConsList<Pos>,
 }
 
 impl Eq for Node {}
@@ -140,15 +142,15 @@ impl PartialOrd for Node {
     }
 }
 
-fn breadth_first_search(graph: Graph) -> f32 {
+fn breadth_first_search(graph: Graph) -> ConsList<Pos> {
     let mut frontier: BinaryHeap<Node> = {
         let node = Node {
             pos: graph.start,
             cost: 0.0,
             neighbours: graph.nodes[&graph.start],
-            path: Vec::new(),
+            path: ConsList::new(),
         };
-        if node.pos == graph.end { return 0.0 }
+        if node.pos == graph.end { return ConsList::new() }
         let mut frontier: BinaryHeap<Node> = BinaryHeap::new();
         frontier.push(node);
         frontier
@@ -160,17 +162,15 @@ fn breadth_first_search(graph: Graph) -> f32 {
         explored.insert(node.pos);
         for neighbour in &node.neighbours {
             if let &Some(neighbour) = neighbour {
-                let mut new_path = node.path.clone();
-                new_path.push(neighbour);
                 let child = Node {
                     pos: neighbour,
                     cost: node.cost + distance(node.pos, neighbour),
                     neighbours: graph.nodes[&neighbour],
-                    path: new_path,
+                    path: node.path.append(neighbour),
                 };
                 if !explored.contains(&neighbour) && frontier.iter().find(|&x| x.clone() == child).is_none() {
                     if neighbour == graph.end {
-                        return child.cost
+                        return child.path
                     }
                     frontier.push(child);
                 }
