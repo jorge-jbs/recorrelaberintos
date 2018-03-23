@@ -48,15 +48,25 @@ pub struct Graph {
 }
 
 fn main() {
-    let graph = read_graph();
+    let mut args = ::std::env::args().skip(1);
+    let algorithm_name = args.next().expect("Algorithm name expected");
+    let maze_name = args.next().expect("Maze name expected");
+    let graph = read_graph(maze_name);
+    //assert!(args.next().is_none());  // No more arguments are expected
     println!("{}", graph.nodes.len());
     println!("");
-    println!("{:?}", semi_parallel_breadth_first_search(graph).len());
+    match algorithm_name.as_str() {
+        "bfs" => println!("{:?}", breadth_first_search(graph).len()),
+        "bfs2" => println!("{:?}", double_breadth_first_search(graph).len()),
+        "pbfs" => println!("{:?}", parallel_breadth_first_search(graph).len()),
+        "pbfs2" => println!("{:?}", semi_parallel_breadth_first_search(graph).len()),
+        _ => panic!("Incorrect algorithm name"),
+    }
 }
 
-fn read_graph() -> Graph {
+fn read_graph(maze_name: String) -> Graph {
     let (buf, width, height) = {
-        let mut decoder = image::png::PNGDecoder::new(File::open(format!("computerphile-mazesolver/examples/{}.png", ::std::env::args().skip(1).next().expect("Introduce the name of the maze"))).unwrap());
+        let mut decoder = image::png::PNGDecoder::new(File::open(format!("computerphile-mazesolver/examples/{}.png", maze_name)).unwrap());
         let (width, height) = decoder.dimensions().unwrap();
         let frames = decoder.into_frames().unwrap().next().unwrap();
         (frames.into_buffer(), width, height)
