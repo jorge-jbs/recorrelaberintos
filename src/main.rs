@@ -14,6 +14,12 @@ use bfs::breadth_first_search;
 mod pbfs;
 use pbfs::parallel_breadth_first_search;
 
+mod pbfs2;
+use pbfs2::semi_parallel_breadth_first_search;
+
+mod bfs2;
+use bfs2::double_breadth_first_search;
+
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Pos {
     x: u32,
@@ -45,7 +51,7 @@ fn main() {
     let graph = read_graph();
     println!("{}", graph.nodes.len());
     println!("");
-    println!("{:?}", parallel_breadth_first_search(graph).len());
+    println!("{:?}", semi_parallel_breadth_first_search(graph).len());
 }
 
 fn read_graph() -> Graph {
