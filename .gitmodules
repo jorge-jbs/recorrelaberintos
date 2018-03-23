@@ -1,0 +1,3 @@
+[submodule "computerphile-mazesolver"]
+	path = computerphile-mazesolver
+	url = https://github.com/mikepound/mazesolving/
