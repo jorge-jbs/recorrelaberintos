@@ -34,7 +34,7 @@ impl PartialOrd for Node {
     }
 }
 
-pub fn breadth_first_search(graph: Graph) -> ConsList<Pos> {
+pub fn breadth_first_search(graph: &Graph) -> ConsList<Pos> {
     let mut frontier: BinaryHeap<Node> = {
         let node = Node {
             pos: graph.start,
@@ -62,7 +62,7 @@ pub fn breadth_first_search(graph: Graph) -> ConsList<Pos> {
             continue
         }
         for neighbour in &node.neighbours {
-            if let &Some(neighbour) = neighbour {
+            if let Some(neighbour) = *neighbour {
                 let child = Node {
                     pos: neighbour,
                     cost: node.cost + distance(node.pos, neighbour),

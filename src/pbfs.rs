@@ -19,7 +19,7 @@ struct Node {
 
 unsafe impl Sync for Node {}
 
-pub fn parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
+pub fn parallel_breadth_first_search(graph: &Graph) -> ConsList<Pos> {
     let mut frontier = vec![Node {
             pos: graph.start,
             neighbours: graph.nodes[&graph.start],
@@ -28,13 +28,7 @@ pub fn parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
     let mut explored: HashSet<Pos> = HashSet::new();
     let mut i = 0;
     while !frontier.is_empty() && i < 100 {
-        //println!("{:?}", frontier);
-        print!("{} ", frontier.len());
-        if true || i % 10 == 0 {
-            use std::io::Write;
-            ::std::io::Stdout::flush(&mut ::std::io::stdout());
-        }
-        frontier = match process_level(&graph, &mut explored, frontier) {
+        frontier = match process_level(graph, &mut explored, frontier) {
             Either::Left(new_frontier) => new_frontier,
             Either::Right(path) => return path,
         };
@@ -51,9 +45,8 @@ fn process_level(graph: &Graph, explored: &mut HashSet<Pos>, frontier: Vec<Node>
     }
     frontier.into_par_iter()
         .for_each_with((sender, sender_finished), |&mut (ref sender, ref sender_finished), node| {
-            //sender.send(node);
             for neighbour in &node.neighbours {
-                if let &Some(neighbour) = neighbour {
+                if let Some(neighbour) = *neighbour {
                     let child = Node {
                         pos: neighbour,
                         neighbours: graph.nodes[&neighbour],
@@ -61,18 +54,15 @@ fn process_level(graph: &Graph, explored: &mut HashSet<Pos>, frontier: Vec<Node>
                     };
                     if !explored.contains(&neighbour) {
                         if neighbour == graph.end {
-                            sender_finished.send(child.path.clone());
-                            //return child.path
+                            sender_finished.send(child.path.clone()).unwrap();
                         }
-                        sender.send(child);
-                        //frontier.push(child);
+                        sender.send(child).unwrap();
                     }
                 }
             }
         });
     match receiver_finished.iter().next() {
         Some(path) => {
-            println!("ciao!");
             Either::Right(path)
         }
         None => Either::Left(receiver.iter().collect()),

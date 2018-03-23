@@ -38,7 +38,7 @@ impl PartialOrd for Node {
 
 const N: usize = 1000;
 
-pub fn semi_parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
+pub fn semi_parallel_breadth_first_search(graph: &Graph) -> ConsList<Pos> {
     let mut frontier: BinaryHeap<Node> = {
         let node = Node {
             pos: graph.start,
@@ -53,7 +53,6 @@ pub fn semi_parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
     };
     let mut explored: HashSet<Pos> = HashSet::new();
     loop {
-        //println!("{:?}\n\n", frontier);
         if frontier.is_empty() { panic!("Fallé. ¡Imposible!") }
         let (explored_s, explored_r) = channel();
         let (frontier_s, frontier_r) = channel();
@@ -62,20 +61,15 @@ pub fn semi_parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
             n if n >= N => N,
             n => n,
         };
-        let frontier_len = frontier.len();
         let mut frontier_ = Vec::with_capacity(n);
         for _ in 0..n {
             frontier_.push(frontier.pop().unwrap());
         }
-        //println!("{}, {}", frontier_len, frontier_.len());
         frontier_.par_iter()
-            //.take(n)
             .for_each_with((explored_s, frontier_s, done_s), |&mut (ref explored_s, ref frontier_s, ref done_s), node| {
-                //let node = frontier.pop().unwrap();
-                explored_s.send(node.pos);
-                //explored.insert(node.pos);
+                explored_s.send(node.pos).unwrap();
                 for neighbour in &node.neighbours {
-                    if let &Some(neighbour) = neighbour {
+                    if let Some(neighbour) = *neighbour {
                         let child = Node {
                             pos: neighbour,
                             cost: node.cost + distance(node.pos, neighbour),
@@ -84,21 +78,14 @@ pub fn semi_parallel_breadth_first_search(graph: Graph) -> ConsList<Pos> {
                         };
                         if !explored.contains(&neighbour) {
                             if neighbour == graph.end {
-                                done_s.send(child.path);
+                                done_s.send(child.path).unwrap();
                                 return
-                                //return child.path
                             }
-                            frontier_s.send(child);
-                            //frontier.push(child);
+                            frontier_s.send(child).unwrap();
                         }
                     }
                 }
             });
-        /*
-        for _ in 0..n {
-            frontier.pop();
-        }
-        */
         for pos in explored_r {
             explored.insert(pos);
         }

@@ -1,7 +1,6 @@
 use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use cons_list::ConsList;
-use std::sync::mpsc::channel;
 
 use *;
 
@@ -37,7 +36,7 @@ impl PartialOrd for Node {
 
 const N: usize = 8;
 
-pub fn double_breadth_first_search(graph: Graph) -> ConsList<Pos> {
+pub fn double_breadth_first_search(graph: &Graph) -> ConsList<Pos> {
     let mut frontier: BinaryHeap<Node> = {
         let node = Node {
             pos: graph.start,
@@ -52,7 +51,6 @@ pub fn double_breadth_first_search(graph: Graph) -> ConsList<Pos> {
     };
     let mut explored: HashSet<Pos> = HashSet::new();
     loop {
-        //println!("{:?}\n\n", frontier);
         if frontier.is_empty() { panic!("Fallé. ¡Imposible!") }
         let mut explored_s = vec![];
         let mut frontier_s = vec![];
@@ -65,57 +63,33 @@ pub fn double_breadth_first_search(graph: Graph) -> ConsList<Pos> {
         for _ in 0..n {
             frontier_.push(frontier.pop().unwrap());
         }
-        frontier_.iter()
-            //.take(n)
-            .map(|node| {
-                //let node = frontier.pop().unwrap();
-                //println!("{:?}", node.pos);
-                explored_s.push(node.pos);
-                //explored.insert(node.pos);
-                for neighbour in &node.neighbours {
-                    if let &Some(neighbour) = neighbour {
-                        let child = Node {
-                            pos: neighbour,
-                            cost: node.cost + distance(node.pos, neighbour),
-                            neighbours: graph.nodes[&neighbour],
-                            path: node.path.append(neighbour),
-                        };
-                        if !explored.contains(&neighbour) {
-                            if neighbour == graph.end {
-                                done_s.push(child.path);
-                                return
-                                //return child.path
-                            }
-                            frontier_s.push(child);
-                            //frontier.push(child);
+        for node in frontier_ {
+            explored_s.push(node.pos);
+            for neighbour in &node.neighbours {
+                if let Some(neighbour) = *neighbour {
+                    let child = Node {
+                        pos: neighbour,
+                        cost: node.cost + distance(node.pos, neighbour),
+                        neighbours: graph.nodes[&neighbour],
+                        path: node.path.append(neighbour),
+                    };
+                    if !explored.contains(&neighbour) {
+                        if neighbour == graph.end {
+                            done_s.push(child.path);
+                            continue
                         }
+                        frontier_s.push(child);
                     }
                 }
-            })
-            .collect::<Vec<_>>();
-        //println!("done");
-        /*
-        for _ in 0..n {
-            frontier.pop();
-            //print!(".");
+            }
         }
-        */
-        //println!("");
-        //println!("Explored: {:?}", explored_s);
-        //print!("Explored: ");
         for pos in explored_s {
             explored.insert(pos);
-            //print!(".");
         }
-        //println!("");
-        //print!("Frontier: ");
         for node in frontier_s {
             frontier.push(node);
-            //print!(".");
         }
-        //println!("");
         for path in done_s {
-            //println!("finished!");
             return path
         }
     }
